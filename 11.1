@@ -1,0 +1,258 @@
+#include <opencv2/core.hpp>
+#include <opencv2/imgcodecs.hpp>
+#include <opencv2/highgui.hpp>
+#include <opencv2/imgproc.hpp>
+#include <math.h>
+#include <time.h>
+ 
+#include <iostream>
+#include <fstream>
+ 
+using namespace std;
+ 
+#define IMG_WIDTH 220
+#define IMG_HEIGHT 183
+ 
+ 
+ 
+ 
+ 
+ 
+float entropy(cv::Mat img,vector<int> hist){
+ 
+    int n = img.cols*img.rows;
+    float pdf;
+    float sum=0;
+ 
+    for(int i=0;i<256;i++){
+        if(hist.at(i)!=0){
+            pdf=(float)hist.at(i)/n;
+            //cout <<i<<' '<<pdf<<endl;
+            sum+=-pdf*log2(pdf);
+        }
+ 
+        // if(i==255){
+        //     cout <<f1<<endl;
+        // }
+    }
+ 
+    return sum/256;
+}
+ 
+ 
+ 
+vector<int> myCalcHist(cv::Mat img){
+    // int histSize = 256;
+    // float range[] = { 0, 256 }; //the upper boundary is exclusive
+    // const float* histRange[] = { range };
+    // bool uniform = true, accumulate = false;
+ 
+    vector<int> hist;
+    hist.assign(256,0);
+ 
+    unsigned char *p;
+    p = img.data;
+ 
+    //cout<<hist[255]<<endl;
+    //cout<<hist[256]<<endl;
+    // hist.at(p[50324])=5;
+    // cout<<hist[188]<<endl;
+    // hist.at(188)=10;
+    // cout<<hist[188]<<endl;
+ 
+    for(unsigned int i=0;i<IMG_WIDTH*IMG_HEIGHT;i++){
+        hist.at(p[i])=hist.at(p[i])+1;
+    }
+ 
+    // for(int i=0;i<256;i++){
+    //     cout<<i<<" "<<hist.at(i)<<endl;
+    // }
+ 
+    // cv::Mat hist;
+    // cv::calcHist(&img, 1, 0, cv::Mat(), hist, 1, &histSize, histRange, uniform, accumulate);
+    return hist;
+}
+ 
+int x1Max=0;
+int x2Max=0;
+int y1Max=0;
+int y2Max=0;
+float curEntropy=0;
+float curMax=0;
+ 
+void maxTransform(cv::Mat img){  
+    for(float x1=0;x1<256;x1++){
+        for(float y1=0;y1<256;y1++){
+            for(float x2=x1+1;x2<256;x2++){
+                for(float y2=y1+1;y2<256;y2++){
+                    cv::Mat imgSrc=img.clone();
+                    //cout<<clock()<<endl;
+                    unsigned char *p;
+                    p = imgSrc.data;
+                    //cout<<typeid(p).name()<<endl;
+ 
+                    for( unsigned int i=0; i< IMG_WIDTH*IMG_HEIGHT; i++ ){
+                        if(p[i]<x1){
+                            p[i]=round(p[i]*y1/x1);
+                        } else if(p[i]>=x1&&p[i]<=x2){
+                            p[i]=round((p[i]-x1)*(y2-y1)/(x2-x1)+y1);
+                        } else if(x2!=255){
+                            p[i]=round((p[i]-x2)*(255-y2)/(255-x2)+y2);
+                        }
+                    }
+ 
+ 
+                    //cout<<clock()<<endl;
+                    vector<int> hist;
+                    hist.assign(256,0);
+                    hist=myCalcHist(imgSrc);
+                    //cout<<clock()<<endl;
+ 
+                    curEntropy=entropy(imgSrc,hist);
+                    //cout<<curEntropy<<","<<x1<<","<<y1<<","<<x2<<","<<y2<<endl;
+                    if(curEntropy > curMax){
+                        curMax = curEntropy;
+                        x1Max=x1;
+                        x2Max=x2;
+                        y1Max=y1;
+                        y2Max=y2;
+                        cout<<"larger:"<<curMax<<","<<x1Max<<","<<y1Max<<","<<x2Max<<","<<y2Max<<endl;
+                    }
+                    //cout<<clock()<<endl;
+                }    
+            }
+        }
+    }
+    cout<<"max:"<<curMax<<","<<x1Max<<","<<y1Max<<","<<x2Max<<","<<y2Max<<endl;
+ 
+    // cv::imshow("Display window", imgSrc);
+    // int k = cv::waitKey(0);
+ 
+    ofstream ofs;
+    ofs.open("output.txt");
+    ofs<<"max:"<<curMax<<","<<x1Max<<","<<y1Max<<","<<x2Max<<","<<y2Max<< "\n";
+    ofs.close();
+}
+ 
+ 
+ 
+void testTranform(cv::Mat img){
+    int x1=80;
+    int y1=160;
+    int x2=255;
+    int y2=255;
+    cv::Mat imgSrc=img.clone();
+    //cout<<clock()<<endl;
+                    unsigned char *p;
+                    p = imgSrc.data;
+                    for( unsigned int i=0; i< IMG_WIDTH*IMG_HEIGHT; i++ ){
+                        if(p[i]<x1){
+                            p[i]=round(p[i]*y1/x1);
+                        } else if(p[i]>=x1&&p[i]<=x2){
+                            p[i]=round((p[i]-x1)*(y2-y1)/(x2-x1)+y1);
+                        } else if(x2!=255){
+                            p[i]=round((p[i]-x2)*(255-y2)/(255-x2)+y2);
+                        }
+                    }
+                    //cout<<clock()<<endl;
+                    vector<int> hist;
+                    hist.assign(256,0);
+                    hist=myCalcHist(imgSrc);
+                    //cout<<clock()<<endl;
+ 
+                    curEntropy=entropy(imgSrc,hist);
+                    if(curEntropy > curMax){
+                        curMax = curEntropy;
+                        x1Max=x1;
+                        x2Max=x2;
+                        y1Max=y1;
+                        y2Max=y2;
+                    }
+                    //cout<<clock()<<endl;
+                    cout<<"max:"<<curMax<<","<<x1Max<<","<<y1Max<<","<<x2Max<<","<<y2Max<<endl;
+ 
+                    // cv::imshow("Display window", imgSrc);
+                    // int k = cv::waitKey(0);
+ 
+                    ofstream ofs;
+                    ofs.open("output.txt");
+                    ofs<<"max:"<<curMax<<","<<x1Max<<","<<y1Max<<","<<x2Max<<","<<y2Max<< "\n";
+                    ofs.close();
+}
+ 
+ 
+ 
+ 
+int main(){
+    cv::Mat img = cv::imread("dark.jpg", 0);
+    //cv::imshow("Display window", img);
+    //int k = cv::waitKey(0); // Wait for a keystroke in the window
+   
+    cout << "Width : " << img.cols << endl;
+    cout << "Height : " << img.rows << endl;
+   
+    vector<int> hist=myCalcHist(img);
+    // for(vector<int>::iterator i=hist.begin();i!=hist.end();++i)  
+    // cout<<*i<<endl;
+   
+    // int hist_w = 512, hist_h = 400;
+    // int bin_w = cvRound( (double) hist_w/histSize );
+    // cv::Mat histImage( hist_h, hist_w, CV_8UC3, cv::Scalar( 0,0,0) );
+   
+    // hist.at<float>(i)
+   
+    //     hist.at<float>( i, j )
+   
+        // cv::imshow("Source image", img );
+        // cv::imshow("calcHist Demo", histImage );
+        // cv::waitKey();
+    //cout << hist.at<float>(254) <<endl;
+   
+    cout<<"original:" << entropy(img,hist)<<endl;
+ 
+    //change
+ 
+ 
+ 
+    //black
+    // for( unsigned int i=20000; i< IMG_WIDTH*IMG_HEIGHT; i++ ){
+    //     p[i]=0;
+    // }
+   
+    // unsigned char *p;
+    // p = img.data;
+    // p[50324]=p[50324]/2;
+    // for( unsigned int i=0; i< img.cols*img.rows; i++ )
+    //     cout<< (int)p[i]<<" ";
+   
+    maxTransform(img);
+ 
+    //testTranform(img);
+   
+   
+   
+    return 0;
+}
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+
