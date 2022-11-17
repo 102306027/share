@@ -1,0 +1,43 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <pthread.h>
+#include <unistd.h>
+#include <string.h>
+
+#include<vector>  
+using namespace std;
+
+int num=0;
+void *add(void *arg) {//線程執行函數，執行10次加法
+    int a;
+    a = *(int*)arg;
+    for (int i=0; i <10; i++)
+    {
+    sleep(1);
+    num++;
+        printf("add+1,result is:%d\n",a);
+    }
+}
+void *sub(void *arg)//線程執行函數，執行10次減法
+{
+    for(int i=0;i<10;i++)
+    {
+    sleep(1);
+    num--;
+        printf("sub-1,result is:%d\n",num);
+    }
+}
+void ex(){
+    pthread_t tid1,tid2;
+    int a=10;
+    pthread_create(&tid1,NULL,add,&a);//創建線程
+    pthread_create(&tid2,NULL,sub,NULL);
+    pthread_join(tid1,NULL);
+    pthread_join(tid2,NULL);
+}
+
+int main() {
+    
+    ex();
+    return 0;
+}
