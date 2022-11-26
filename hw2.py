@@ -21,7 +21,7 @@ import numpy as np
 
 imgSrc=img.copy()
 padded = np.pad(imgSrc, pad_width = 1, mode = 'constant') 
-paddedCopy=padded
+paddedCopy=padded.copy()
 count=0
 
 for i in range(1,751):
@@ -38,7 +38,7 @@ print(count)
 
 cv2.imwrite('new3_1.jpg',paddedCopy)
 
-padded = paddedCopy
+padded = paddedCopy.copy()
 for i in range(1,751):
   for j in range(1,751):
     fil=np.zeros(0)
@@ -67,11 +67,11 @@ count
 
 imgSrc=img.copy()
 padded5 = np.pad(imgSrc, pad_width = 2, mode = 'constant') 
-padded5Copy=padded5
+padded5Copy=padded5.copy()
 print(count5)=0
 
-for i in range(1,751):
-  for j in range(1,751):
+for i in range(2,752):
+  for j in range(2,752):
     fil=np.zeros(0)
     for f in range(i-2,i+3):
       for g in range(j-2,j+3):
